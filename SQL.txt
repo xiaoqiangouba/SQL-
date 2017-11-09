@@ -1,0 +1,167 @@
+create table dept(
+id  int unsigned primary key auto_increment,
+deptno mediumint not null default 0,
+dname varchar(20) not null default "",
+loc varchar(13) not null default ""
+)engine=innodb default charset=UTF8;
+
+//mediumint 一个中等大小整数，有符号的范围是-8388608到8388607，无符号的范围是0到16777215。 一位大小为3个字节。
+//、tinyint 有符号的范围是-128 - 127，无符号的范围是 从 0 到 255 的整型数据。一位大小为 1 字节。
+//smallint 一个小整数。有符号的范围是-2^15 (-32,768) 到 2^15 - 1 (32,767) 的整型数据，无符号的范围是0到65535。
+一位大小为 2 个字节。MySQL提供的功能已经绰绰有余，而且由于MySQL是开放源码软件，因此可以大大降低总体拥有成本。
+//ENGINE=InnoDB使用innodb引擎
+  DEFAULT CHARSET=utf8 数据库默认编码为utf-8
+  AUTO_INCREMENT=1 自增键的起始序号为1
+
+create table emp(
+id int unsigned primary key auto_increment,
+dempno mediumint unsigned not null default 0,
+ename varchar(20) not null default "",//名字
+job varchar(20) not null default "",//工作
+mgr mediumint unsigned not null default 0,//上级编号
+hiredate date not null,//入职时间
+sal decimal(7,2) not null,//薪水
+comm decimal(7,2) not null,//红利
+deptno mediumint unsigned not null default 0//部门编号
+
+)engine=innodb default charset=UTF8;
+
+
+delimiter $$ //创建结束符合  如将默认的结束;改为$$
+create function rand_string(n int) returns varchar(255)//创建函数
+
+begin
+   declare chares_str varchar(100) default'zxcvbnmlkjhgfdsaqwertyuiopZXCVBNMLKJHGFDSAQWERTYUIOP';//创建一个字符串 初始值为26个字母大小写
+   declare return_str varchar(1255) default '';//创建返回值
+   declare i int default 0;
+   while i<n do
+   set return_str =concat(return_str ,
+       substring(
+               chares_str ,floor(1+rand()*52),1
+           )
+       );
+   set i=i+1;
+   end while;
+   return return_str;
+   end $$
+//用于随机生产部门编号
+delimiter $$
+create function rand_num()
+returns int(5)
+begin
+declare  i int default 0;
+set i=floor(100+rand()*10);
+return i;
+end $$
+
+//删除函数
+drop function rand_num;
+
+//插入数据
+delimiter $$
+create procedure insert_emp(in start int(10), in max_num int(10))
+begin
+ declare i int default 0;
+ set autocommit =0;
+ repeat
+ set i =i+1;
+ insert into emp(dempno,ename,job,mgr,hiredate,sal,comm,deptno) values ((start+i),rand_string(6),'salesman',0001,curdate(),2000,400,rand_num());
+until i=max_num
+end repeat;
+commit;
+end $$
+
+delimiter $$
+create procedure insert_dept(in start int(10), in max_num int(10))
+begin
+ declare i int default 0;
+ set autocommit =0;
+ repeat
+ set i =i+1;
+ insert into dept(deptno,dname,loc) values ((start+i),rand_string(10),rand_string(8));
+until i=max_num
+end repeat;
+commit;
+end $$
+
+
+delimiter ;结束符号改为分号
+call insert_dept(100001,500000);
+
+delimiter ;结束符号改为分号
+call insert_emp(100,10);
+
+create index inx_userinfo_uid on ssm.userinfo(userInfo_id);//
+创建索引
+alter table ssm.userinfo add index y(userInfo_id);//
+创建索引
+drop index y on ssm.userinfo;//删除索引
+
+
+
+select *
+from ssm.user as a 
+inner join ssm.userinfo as b on a.user_id =b.userInfo_id;//全链接查询
+
+
+alter table ssm.userinfo add index inx_user_id(userInfo_id);//建立索引
+
+drop index inx_user_id on ssm.userinfo;//
+删除索引
+explain select *
+from ssm.user as a,ssm.userinfo as b 
+where a.user_id =b.userInfo_id;
+
+
+
+explain select *
+from ssm.user as a 
+left join ssm.userinfo as b on a.user_id = b.userInfo_id;
+
+
+explain select *
+from ssm.userinfo b
+right join ssm.user a on a.user_id =b.userInfo_id;
+
+
+select *
+from ssm.user a 
+left join ssm.userinfo b on a.user_id=b.userInfo_id 
+where b.userInfo_id is null;
+
+
+select *
+from ssm.user a 
+right join ssm.userinfo b on a.user_id=b.userInfo_id 
+where a.user_id is null;
+
+
+select *
+from ssm.user as a 
+left join ssm.userinfo as b on a.user_id = b.userInfo_id 
+union 
+select *
+from ssm.user a 
+right join ssm.userinfo b on a.user_id =b.userInfo_id;
+
+
+select *
+from ssm.user a 
+right join ssm.userinfo b on a.user_id=b.userInfo_id 
+where a.user_id is null
+union
+select *
+from ssm.user a 
+left join ssm.userinfo b on a.user_id=b.userInfo_id 
+where b.userInfo_id is null;
+
+
+//查询一张表中姓名相同的所有信息
+select * 
+from ls.vodie
+  where name in(
+select name
+  from ls.vodie  
+group by name having count(*)>1
+
+)
